@@ -409,12 +409,16 @@ typedef std::function<void(AsyncWebServerRequest *request)> ArRequestHandlerFunc
 typedef std::function<void(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final)> ArUploadHandlerFunction;
 typedef std::function<void(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)> ArBodyHandlerFunction;
 
+typedef std::function<void(AsyncWebServerRequest *request)> ASDisconnectHandler;
+
 class AsyncWebServer {
   protected:
     AsyncServer _server;
     LinkedList<AsyncWebRewrite*> _rewrites;
     LinkedList<AsyncWebHandler*> _handlers;
     AsyncCallbackWebHandler* _catchAllHandler;
+    ASDisconnectHandler _onDisconnectfn;
+    ArRequestFilterFunction _filter;
 
   public:
     AsyncWebServer(uint16_t port);
@@ -435,6 +439,10 @@ class AsyncWebServer {
     AsyncWebHandler& addHandler(AsyncWebHandler* handler);
     bool removeHandler(AsyncWebHandler* handler);
 
+    // Filter returns true of request should be processed. 
+    // In case of false is returned, filter must set own handler 
+    AsyncWebServer& setFilter(ArRequestFilterFunction fn);
+
     AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
     AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
@@ -445,6 +453,7 @@ class AsyncWebServer {
     void onNotFound(ArRequestHandlerFunction fn);  //called when handler is not assigned
     void onFileUpload(ArUploadHandlerFunction fn); //handle file uploads
     void onRequestBody(ArBodyHandlerFunction fn); //handle posts with plain body content (JSON often transmitted this way as a request)
+    void onDisconnect (ASDisconnectHandler fn); // handle disconnect globally
 
     void reset(); //remove all writers and handlers, with onNotFound/onFileUpload/onRequestBody
 

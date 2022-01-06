@@ -39,6 +39,8 @@ AsyncWebServer::AsyncWebServer(uint16_t port)
   : _server(port)
   , _rewrites(LinkedList<AsyncWebRewrite*>([](AsyncWebRewrite* r){ delete r; }))
   , _handlers(LinkedList<AsyncWebHandler*>([](AsyncWebHandler* h){ delete h; }))
+  , _onDisconnectfn(nullptr)
+  ,_filter (nullptr)
 {
   _catchAllHandler = new AsyncCallbackWebHandler();
   if(_catchAllHandler == NULL)
@@ -84,6 +86,11 @@ bool AsyncWebServer::removeHandler(AsyncWebHandler *handler){
   return _handlers.remove(handler);
 }
 
+AsyncWebServer& AsyncWebServer::setFilter(ArRequestFilterFunction fn) {
+  _filter = fn; 
+  return *this; 
+}
+
 void AsyncWebServer::begin(){
   _server.setNoDelay(true);
   _server.begin();
@@ -103,7 +110,14 @@ void AsyncWebServer::beginSecure(const char *cert, const char *key, const char *
 }
 #endif
 
+void AsyncWebServer::onDisconnect (ASDisconnectHandler fn){
+    _onDisconnectfn=fn;
+}
+
 void AsyncWebServer::_handleDisconnect(AsyncWebServerRequest *request){
+  if(_onDisconnectfn) {
+    _onDisconnectfn(request);
+  }
   delete request;
 }
 
@@ -117,15 +131,16 @@ void AsyncWebServer::_rewriteRequest(AsyncWebServerRequest *request){
 }
 
 void AsyncWebServer::_attachHandler(AsyncWebServerRequest *request){
-  for(const auto& h: _handlers){
-    if (h->filter(request) && h->canHandle(request)){
-      request->setHandler(h);
-      return;
+  if(!_filter || _filter(request)) {
+    for(const auto& h: _handlers){
+      if (h->filter(request) && h->canHandle(request)){
+        request->setHandler(h);
+        return;
+      }
     }
+    request->addInterestingHeader(F("ANY"));
+    request->setHandler(_catchAllHandler);
   }
-
-  request->addInterestingHeader(F("ANY"));
-  request->setHandler(_catchAllHandler);
 }
 
 

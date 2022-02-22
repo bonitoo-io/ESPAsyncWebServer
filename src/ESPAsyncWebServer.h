@@ -443,10 +443,10 @@ class AsyncWebServer {
     // In case of false is returned, filter must set own handler 
     AsyncWebServer& setFilter(ArRequestFilterFunction fn);
 
-    AsyncCallbackWebHandler& on(const char* uri, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
-    AsyncCallbackWebHandler& on(const char* uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
+    AsyncCallbackWebHandler& on(const String &uri, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const String &uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest);
+    AsyncCallbackWebHandler& on(const String &uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload);
+    AsyncCallbackWebHandler& on(const String &uri, WebRequestMethodComposite method, ArRequestHandlerFunction onRequest, ArUploadHandlerFunction onUpload, ArBodyHandlerFunction onBody);
 
     AsyncStaticWebHandler& serveStatic(const char* uri, fs::FS& fs, const char* path, const char* cache_control = NULL);
 

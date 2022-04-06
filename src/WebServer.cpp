@@ -91,9 +91,9 @@ AsyncWebServer& AsyncWebServer::setFilter(ArRequestFilterFunction fn) {
   return *this; 
 }
 
-void AsyncWebServer::begin(){
+int8_t AsyncWebServer::begin(){
   _server.setNoDelay(true);
-  _server.begin();
+  return _server.begin();
 }
 
 void AsyncWebServer::end(){

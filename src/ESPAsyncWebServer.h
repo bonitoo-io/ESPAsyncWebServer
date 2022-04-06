@@ -424,7 +424,7 @@ class AsyncWebServer {
     AsyncWebServer(uint16_t port);
     ~AsyncWebServer();
 
-    void begin();
+    int8_t begin();
     void end();
 
 #if ASYNC_TCP_SSL_ENABLED

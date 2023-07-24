@@ -7,7 +7,7 @@
  #include "edit.htm.gz.h"
 #endif
 
-#ifdef ESP32 
+#ifdef ESP32
  #define fullName(x) name(x)
 #endif
 
@@ -33,13 +33,13 @@ static bool matchWild(const char *pattern, const char *testee) {
       nxPat=pattern++; nxTst=testee;
       continue;
     }
-    if (nxPat){ 
+    if (nxPat){
       pattern = nxPat+1; testee=++nxTst;
       continue;
     }
     return false;
   }
-  while (*pattern=='*'){pattern++;}  
+  while (*pattern=='*'){pattern++;}
   return (*pattern == 0);
 }
 
@@ -200,7 +200,7 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 #endif
 		String fname = entry.fullName();
 		if (fname.charAt(0) != '/') fname = "/" + fname;
-		
+
         if (isExcluded(_fs, fname.c_str())) {
 #ifdef ESP32
             entry = dir.openNextFile();
@@ -236,14 +236,16 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
       if (request->header(F("If-Modified-Since")).equals(buildTime)) {
         request->send(304);
       } else {
-#ifdef EDFS 
-         AsyncWebServerResponse *response = request->beginResponse(_fs, F("/edit_gz"), F("text/html"), false);
+#ifdef EDFS
+         AsyncWebServerResponse *response = request->beginResponse(_fs, F("/edit.htm.gz"), F("text/html"), false);
 #else
          AsyncWebServerResponse *response = request->beginResponse_P(200, F("text/html"), edit_htm_gz, edit_htm_gz_len);
 #endif
-         response->addHeader(F("Content-Encoding"), F("gzip"));
-         response->addHeader(F("Last-Modified"), buildTime);
-         request->send(response);
+         if (response) {
+           response->addHeader(F("Content-Encoding"), F("gzip"));
+           response->addHeader(F("Last-Modified"), buildTime);
+           request->send(response);
+         }
       }
     }
   } else if(request->method() == HTTP_DELETE){
@@ -252,45 +254,45 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 #ifdef ESP32
 			_fs.rmdir(request->getParam(F("path"), true)->value()); // try rmdir for littlefs
 #endif
-		}			
-			
+		}
+
       request->send(200, "", String(F("DELETE: "))+request->getParam(F("path"), true)->value());
     } else
       request->send(404);
   } else if(request->method() == HTTP_POST){
     if(request->hasParam(F("data"), true, true) && _fs.exists(request->getParam(F("data"), true, true)->value()))
       request->send(200, "", String(F("UPLOADED: "))+request->getParam(F("data"), true, true)->value());
-  
+
 	else if(request->hasParam(F("rawname"), true) &&  request->hasParam(F("raw0"), true)){
 	  String rawnam = request->getParam(F("rawname"), true)->value();
-	  
+
 	  if (_fs.exists(rawnam)) _fs.remove(rawnam); // delete it to allow a mode
-	  
+
 	  int k = 0;
 	  uint16_t i = 0;
 	  fs::File f = _fs.open(rawnam, "a");
-	  
+
 	  while (request->hasParam(String(F("raw")) + String(k), true)) { //raw0 .. raw1
 		if(f){
-			i += f.print(request->getParam(String(F("raw")) + String(k), true)->value());  
+			i += f.print(request->getParam(String(F("raw")) + String(k), true)->value());
 		}
 		k++;
 	  }
 	  f.close();
 	  request->send(200, "", String(F("IPADWRITE: ")) + rawnam + ":" + String(i));
-	  
+
     } else {
       request->send(500);
-    }	  
-  
+    }
+
   } else if(request->method() == HTTP_PUT){
     if(request->hasParam(F("path"), true)){
       String filename = request->getParam(F("path"), true)->value();
       if(_fs.exists(filename)){
         request->send(200);
-      } else {  
+      } else {
 /*******************************************************/
-#ifdef ESP32  
+#ifdef ESP32
 		if (strchr(filename.c_str(), '/')) {
 			// For file creation, silently make subdirs as needed.  If any fail,
 			// it will be caught by the real file open later on
@@ -306,9 +308,9 @@ void SPIFFSEditor::handleRequest(AsyncWebServerRequest *request){
 				}
 			}
 			free(pathStr);
-		}		  
-#endif		  
-/*******************************************************/		  
+		}
+#endif
+/*******************************************************/
         fs::File f = _fs.open(filename, "w");
         if(f){
           f.write((uint8_t)0x00);
